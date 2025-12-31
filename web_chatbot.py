@@ -183,36 +183,40 @@ def format_movie_info(movie: pd.Series, detailed: bool = True) -> str:
     return info
 
 def call_gemini_api(query: str) -> str:
-    """Call Gemini API for general movie knowledge"""
-    # Ensure the google-generativeai package is installed
-    if not GENAI_INSTALLED:
-        return "⚠️ The `google-generativeai` package is not installed. Add it to `requirements.txt` and redeploy."
+    """Call Gemini API for general movie knowledge.
 
-    # Ensure the API key / model is configured
-    if not st.session_state.api_configured or st.session_state.model is None:
-        return "⚠️ Gemini API not configured. Please add your API key in .env file or configure secrets on Streamlit Cloud."
+    Returns a helpful message if the `google-generativeai` package is missing
+    or if the API key/model is not configured.
+    """
+
+    # If the gemini package isn't installed, return a clear instruction.
+    if not GENAI_INSTALLED:
+        return (
+            "⚠️ The `google-generativeai` package is not installed. "
+            "Add it to `requirements.txt` and redeploy."
+        )
+
+    # If the API key or model isn't configured, instruct the user.
+    if not st.session_state.get("api_configured") or st.session_state.get("model") is None:
+        return (
+            "⚠️ Gemini API not configured. Please add your API key in `.env` or "
+            "configure secrets on Streamlit Cloud."
+        )
 
     try:
-        prompt = f"""You are a helpful movie expert chatbot.
-        Answer this movie question concisely and informatively: {query}
-        Keep the response to 2-3 paragraphs maximum."""
-
+        prompt = (
+            f"You are a helpful movie expert chatbot. Answer this movie question concisely: {query}"
+        )
         response = st.session_state.model.generate_content(prompt)
-        return response.text
+        return getattr(response, "text", str(response))
     except Exception as e:
         error_msg = str(e)
-        # Check for quota exceeded error
         if "429" in error_msg or "quota" in error_msg.lower():
-            return """⚠️ **API Quota Exceeded**
-
-The free tier Gemini API quota has been exceeded. This resets:
-- **Every minute** for request limits
-- **Daily** for token limits
-
-Try again in a few moments, or you can:
-1. Search the database for specific movies
-2. Add billing to your Google Cloud account for higher limits
-3. Wait until tomorrow for daily reset"""
+            return (
+                "⚠️ **API Quota Exceeded**\n\n"
+                "The free tier Gemini API quota has been exceeded. Try again in a few moments, "
+                "or add billing to your Google Cloud account for higher limits."
+            )
         return f"❌ Error: {error_msg[:200]}"
 
 def answer_from_dataset(query: str) -> Optional[str]:
