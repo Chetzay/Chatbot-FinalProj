@@ -90,7 +90,7 @@ if not api_key:
 if api_key and api_key.strip() and len(api_key) > 10 and GENAI_INSTALLED:
     try:
         genai.configure(api_key=api_key)
-        st.session_state.model = genai.GenerativeModel('gemini-2.5-flash')
+        st.session_state.model = genai.GenerativeModel('gemini-2.5-flash-lite')
         st.session_state.api_configured = True
     except Exception:
         st.session_state.api_configured = False
