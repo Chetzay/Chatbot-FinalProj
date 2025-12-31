@@ -5,7 +5,12 @@ from difflib import SequenceMatcher
 import re
 import os
 from typing import Optional, List, Tuple
-import google.generativeai as genai
+try:
+    import google.generativeai as genai
+    GENAI_INSTALLED = True
+except Exception:
+    genai = None
+    GENAI_INSTALLED = False
 from dotenv import load_dotenv
 
 # Load environment variables from .env file
@@ -82,14 +87,15 @@ if not api_key:
     except:
         pass
 
-if api_key and api_key.strip() and len(api_key) > 10:
+if api_key and api_key.strip() and len(api_key) > 10 and GENAI_INSTALLED:
     try:
         genai.configure(api_key=api_key)
-        st.session_state.model = genai.GenerativeModel('gemini-2.5-flash')
+        st.session_state.model = genai.GenerativeModel('gemini-2.0-flash')
         st.session_state.api_configured = True
-    except Exception as e:
+    except Exception:
         st.session_state.api_configured = False
 else:
+    # Not configured either because key missing or package not installed
     st.session_state.api_configured = False
 
 try:
@@ -179,7 +185,10 @@ def format_movie_info(movie: pd.Series, detailed: bool = True) -> str:
 def call_gemini_api(query: str) -> str:
     """Call Gemini API for general movie knowledge"""
     if not st.session_state.api_configured or st.session_state.model is None:
-        return "⚠️ Gemini API not configured. Please add your API key in the sidebar."
+    if not GENAI_INSTALLED:
+        return "⚠️ The `google-generativeai` package is not installed. Add it to `requirements.txt` and redeploy."
+    if not st.session_state.api_configured or st.session_state.model is None:
+        return "⚠️ Gemini API not configured. Please add your API key in .env file or configure secrets on Streamlit Cloud."
 
     try:
         prompt = f"""You are a helpful movie expert chatbot.
