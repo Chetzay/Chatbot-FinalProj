@@ -184,9 +184,11 @@ def format_movie_info(movie: pd.Series, detailed: bool = True) -> str:
 
 def call_gemini_api(query: str) -> str:
     """Call Gemini API for general movie knowledge"""
-    if not st.session_state.api_configured or st.session_state.model is None:
+    # Ensure the google-generativeai package is installed
     if not GENAI_INSTALLED:
         return "⚠️ The `google-generativeai` package is not installed. Add it to `requirements.txt` and redeploy."
+
+    # Ensure the API key / model is configured
     if not st.session_state.api_configured or st.session_state.model is None:
         return "⚠️ Gemini API not configured. Please add your API key in .env file or configure secrets on Streamlit Cloud."
 
